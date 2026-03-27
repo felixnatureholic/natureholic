@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pflanzen Bestelltool</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+:root {
+  --bg:#0f1117;--surface:#181c26;--surface2:#1f2433;--border:#2a3045;
+  --accent:#4ade80;--accent2:#22d3ee;--warn:#fbbf24;--danger:#f87171;
+  --purple:#c084fc;--text:#e2e8f0;--muted:#64748b;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+  --krause:#34d399;--dennerle:#60a5fa;--tropica:#f97316;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;padding:24px;}
+header{display:flex;align-items:baseline;gap:16px;margin-bottom:28px;border-bottom:1px solid var(--border);padding-bottom:18px;}
+h1{font-family:var(--mono);font-size:19px;font-weight:600;color:var(--accent);}
+.subtitle{font-size:13px;color:var(--muted);font-family:var(--mono);}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:22px;}
+.upload-card{background:var(--surface);border:1px dashed var(--border);border-radius:8px;padding:18px;cursor:pointer;position:relative;transition:border-color .2s;}
+.upload-card:hover{border-color:var(--accent);}
+.upload-card.loaded{border-color:var(--accent);border-style:solid;}
+.upload-icon{font-size:22px;margin-bottom:6px;color:var(--muted);}
+.upload-label{font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+.upload-title{font-size:13px;font-weight:500;margin-bottom:3px;}
+.upload-desc{font-size:11px;color:var(--muted);line-height:1.4;}
+.upload-status{font-size:11px;font-family:var(--mono);margin-top:7px;color:var(--accent);}
+input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:13px;}
+.sec-title{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap;}
+.sec-line{flex:1;height:1px;background:var(--border);}
+.fix-block{background:var(--surface);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:18px;margin-bottom:22px;}
+.fix-note{font-size:11px;color:var(--muted);font-family:var(--mono);}
+.fix-table{width:100%;border-collapse:collapse;font-size:12px;}
+.fix-table th{background:var(--surface2);padding:7px 9px;text-align:left;font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.fix-table td{padding:6px 7px;border-bottom:1px solid rgba(42,48,69,.5);vertical-align:middle;}
+.fix-table tr:last-child td{border-bottom:none;}
+.fix-table tbody tr:hover td{background:rgba(255,255,255,.02);}
+.iln{background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);font-family:var(--sans);font-size:12px;padding:2px 3px;width:100%;}
+.iln:hover{border-bottom-color:var(--border);}
+.iln:focus{outline:none;border-bottom-color:var(--warn);}
+.iln-mono{font-family:var(--mono);}
+.num-in{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:4px 7px;border-radius:4px;width:62px;text-align:right;}
+.num-in:focus{outline:none;border-color:var(--warn);}
+.qty-in{background:transparent;border:none;border-bottom:1px solid transparent;color:var(--accent);font-family:var(--mono);font-weight:600;font-size:13px;width:60px;text-align:right;cursor:text;}
+.qty-in:hover{border-bottom-color:rgba(74,222,128,.4);}
+.qty-in:focus{outline:none;border-bottom-color:var(--accent);}
+.res-badge{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;min-width:28px;text-align:center;}
+.res-badge.has{background:rgba(251,191,36,.15);color:var(--warn);border:1px solid rgba(251,191,36,.3);}
+.res-badge.none{color:var(--muted);}
+.bst-badge{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;min-width:28px;text-align:center;}
+.bst-badge.ok{background:rgba(74,222,128,.1);color:var(--accent);border:1px solid rgba(74,222,128,.2);}
+.bst-badge.low{background:rgba(248,113,113,.1);color:var(--danger);border:1px solid rgba(248,113,113,.2);}
+.bst-badge.none{color:var(--muted);}
+.del-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:3px;}
+.del-btn:hover{color:var(--danger);background:rgba(248,113,113,.1);}
+.add-row-btn{background:transparent;border:1px dashed var(--border);color:var(--muted);font-family:var(--mono);font-size:11px;padding:7px;border-radius:5px;cursor:pointer;margin-top:10px;width:100%;}
+.add-row-btn:hover{border-color:var(--warn);color:var(--warn);}
+.run-btn{background:var(--accent);color:#0f1117;border:none;padding:11px 32px;font-family:var(--mono);font-size:14px;font-weight:600;border-radius:6px;cursor:pointer;display:block;width:100%;margin-bottom:22px;transition:opacity .2s;}
+.run-btn:hover{opacity:.9;}
+.run-btn:disabled{opacity:.3;cursor:not-allowed;}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:22px;}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.stat-label{font-size:10px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;}
+.stat-value{font-family:var(--mono);font-size:24px;font-weight:600;}
+.lief-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);}
+.lief-tab{padding:10px 22px;font-family:var(--mono);font-size:12px;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;background:transparent;color:var(--muted);transition:all .15s;margin-bottom:-1px;}
+.lief-tab:hover{color:var(--text);background:var(--surface);}
+.lief-tab.active{background:var(--surface);border-color:var(--border);color:var(--text);}
+.lief-tab.tab-krause.active{border-top-color:var(--krause);color:var(--krause);}
+.lief-tab.tab-dennerle.active{border-top-color:var(--dennerle);color:var(--dennerle);}
+.lief-tab.tab-tropica.active{border-top-color:var(--tropica);color:var(--tropica);}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle;}
+.dot-krause{background:var(--krause);}.dot-dennerle{background:var(--dennerle);}.dot-tropica{background:var(--tropica);}
+.lief-panel{display:none;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;padding:18px;}
+.lief-panel.active{display:block;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+.panel-stats{display:flex;gap:16px;}
+.panel-stat{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.panel-stat span{font-weight:600;color:var(--text);}
+.panel-actions{display:flex;gap:8px;}
+.action-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 14px;font-family:var(--mono);font-size:11px;border-radius:5px;cursor:pointer;transition:background .15s;}
+.action-btn:hover{background:var(--border);}
+.mail-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px;margin-top:16px;}
+.mail-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.mail-label{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.mail-copy-btn{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:3px;cursor:pointer;}
+.mail-copy-btn:hover{border-color:var(--accent2);color:var(--accent2);}
+.mail-copy-btn.copied{border-color:var(--accent);color:var(--accent);}
+.mail-field{margin-bottom:8px;}
+.mail-field-label{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;}
+.mail-field-val{font-size:13px;color:var(--text);padding:6px 10px;background:var(--surface);border-radius:4px;}
+.mail-body{font-size:12px;color:var(--text);padding:10px;background:var(--surface);border-radius:4px;white-space:pre-wrap;line-height:1.6;font-family:var(--mono);}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead th{background:var(--surface2);padding:8px 10px;text-align:left;font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:1;}
+.table-wrap{border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.scroll-wrap{overflow-x:auto;max-height:440px;overflow-y:auto;}
+.scroll-wrap::-webkit-scrollbar{width:5px;height:5px;}
+.scroll-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+tbody tr{border-bottom:1px solid var(--border);}
+tbody tr:hover{background:rgba(255,255,255,.03);}
+tbody td{padding:8px 10px;vertical-align:middle;}
+.num{font-family:var(--mono);text-align:right;}
+.muted-v{color:var(--muted);}
+.warn-v{color:var(--warn);}
+.tag{display:inline-block;padding:1px 7px;border-radius:3px;font-size:10px;font-family:var(--mono);font-weight:500;text-transform:uppercase;}
+.tag-normal{background:rgba(74,222,128,.1);color:var(--accent);border:1px solid rgba(74,222,128,.2);}
+.tag-bestand{background:rgba(34,211,238,.1);color:var(--accent2);border:1px solid rgba(34,211,238,.2);}
+.art-name{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lnc{font-family:var(--mono);font-size:11px;color:var(--muted);}
+.empty-state{text-align:center;padding:40px;color:var(--muted);font-family:var(--mono);font-size:13px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 Pflanzen Bestelltool</h1>
+  <span class="subtitle">Mo / Mi Nachbestellung · Garnelio</span>
+</header>
+
+<div class="grid">
+  <div class="upload-card" id="card-bestand">
+    <div class="upload-icon">📦</div>
+    <div class="upload-label">Schritt 1</div>
+    <div class="upload-title">Warenbestände CSV</div>
+    <div class="upload-desc">Var-ID, Reservierung, Bestand</div>
+    <div class="upload-status" id="status-bestand">— nicht geladen</div>
+    <input type="file" accept=".csv" onchange="loadBestandCSV(this)">
+  </div>
+  <div class="upload-card" id="card-verkauf">
+    <div class="upload-icon">📈</div>
+    <div class="upload-label">Schritt 2</div>
+    <div class="upload-title">Verkäufe CSV</div>
+    <div class="upload-desc">Var-ID und Menge (wöchentlich)</div>
+    <div class="upload-status" id="status-verkauf">— nicht geladen</div>
+    <input type="file" accept=".csv" onchange="loadVerkaufCSV(this)">
+  </div>
+  <div class="upload-card" id="card-bestandliste">
+    <div class="upload-icon">📋</div>
+    <div class="upload-label">Schritt 3</div>
+    <div class="upload-title">Pflanzen auf Bestand (ODS/CSV)</div>
+    <div class="upload-desc">Var-IDs der dauerhaft bevorraten Artikel</div>
+    <div class="upload-status" id="status-bestandliste">— nicht geladen</div>
+    <input type="file" accept=".csv,.ods,.xlsx" onchange="loadBestandListe(this)">
+  </div>
+</div>
+
+<div class="fix-block">
+  <div class="sec-hdr">
+    <span class="sec-title" style="color:var(--warn)">📦 Fixartikel — Eigenverarbeitung</span>
+    <div class="sec-line"></div>
+    <span class="fix-note">Eigenbedarf wird auf den gematchten Hauptartikel addiert · Fixartikel erscheinen nicht in der Bestellliste</span>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="fix-table">
+      <thead><tr>
+        <th>Artikel</th>
+        <th>Lieferant</th>
+        <th>Lief-Nr (Bestellartikel)</th>
+        <th>Var-ID (Bestandsartikel)</th>
+        <th style="text-align:center">Bestand</th>
+        <th style="text-align:center">Reserv.</th>
+        <th style="text-align:right">Eigenbedarf</th>
+        <th style="text-align:right">Gesamt</th>
+        <th style="width:28px"></th>
+      </tr></thead>
+      <tbody id="fix-body"></tbody>
+    </table>
+  </div>
+  <button class="add-row-btn" onclick="addFixRow()">＋ Artikel hinzufügen</button>
+</div>
+
+<button class="run-btn" id="run-btn" onclick="calculate()" disabled>▶ Bestelllisten berechnen</button>
+
+<div id="results" style="display:none">
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-label">Artikel gesamt</div><div class="stat-value" style="color:var(--accent)" id="st-total">0</div></div>
+    <div class="stat-box"><div class="stat-label">Krause</div><div class="stat-value" style="color:var(--krause)" id="st-krause">0</div></div>
+    <div class="stat-box"><div class="stat-label">Dennerle</div><div class="stat-value" style="color:var(--dennerle)" id="st-dennerle">0</div></div>
+    <div class="stat-box"><div class="stat-label">Tropica</div><div class="stat-value" style="color:var(--tropica)" id="st-tropica">0</div></div>
+  </div>
+
+  <div class="lief-tabs">
+    <button class="lief-tab tab-krause active" onclick="switchTab('krause',this)"><span class="dot dot-krause"></span>Krause Plant</button>
+    <button class="lief-tab tab-dennerle" onclick="switchTab('dennerle',this)"><span class="dot dot-dennerle"></span>Dennerle</button>
+    <button class="lief-tab tab-tropica" onclick="switchTab('tropica',this)"><span class="dot dot-tropica"></span>Tropica</button>
+  </div>
+
+  <div class="lief-panel active" id="panel-krause">
+    <div class="panel-header">
+      <div class="panel-stats">
+        <div class="panel-stat">Artikel: <span id="cnt-krause">0</span></div>
+        <div class="panel-stat">Menge: <span id="qty-krause">0</span></div>
+      </div>
+      <div class="panel-actions">
+        <button class="action-btn" onclick="exportCSV('krause')">⬇ CSV</button>
+        <button class="action-btn" onclick="toggleMail('krause')">✉ Mail</button>
+      </div>
+    </div>
+    <div class="table-wrap"><div class="scroll-wrap"><table>
+      <thead><tr><th>Lief-Nr</th><th>Artikel</th><th>Typ</th><th style="text-align:right">Reserv.</th><th style="text-align:right">Bestand</th><th style="text-align:right">Verkäufe</th><th style="text-align:right">Bestellmenge</th></tr></thead>
+      <tbody id="tbl-krause"></tbody>
+    </table></div></div>
+    <div class="mail-box" id="mail-krause" style="display:none">
+      <div class="mail-header"><span class="mail-label">✉ Bestellmail</span><button class="mail-copy-btn" id="copybtn-krause" onclick="copyMail('krause')">Kopieren</button></div>
+      <div class="mail-field"><div class="mail-field-label">An</div><div class="mail-field-val"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5a3536332c3f280531283b2f293f6b1a3d3722743e3f">[email&#160;protected]</a></div></div>
+      <div class="mail-field"><div class="mail-field-label">Betreff</div><div class="mail-field-val" id="subj-krause"></div></div>
+      <div class="mail-field"><div class="mail-field-label">Nachricht</div><div class="mail-body" id="body-krause"></div></div>
+    </div>
+  </div>
+
+  <div class="lief-panel" id="panel-dennerle">
+    <div class="panel-header">
+      <div class="panel-stats">
+        <div class="panel-stat">Artikel: <span id="cnt-dennerle">0</span></div>
+        <div class="panel-stat">Menge: <span id="qty-dennerle">0</span></div>
+      </div>
+      <div class="panel-actions">
+        <button class="action-btn" onclick="exportCSV('dennerle')">⬇ CSV</button>
+        <button class="action-btn" onclick="toggleMail('dennerle')">✉ Mail</button>
+      </div>
+    </div>
+    <div class="table-wrap"><div class="scroll-wrap"><table>
+      <thead><tr><th>Lief-Nr</th><th>Artikel</th><th>Typ</th><th style="text-align:right">Reserv.</th><th style="text-align:right">Bestand</th><th style="text-align:right">Verkäufe</th><th style="text-align:right">Bestellmenge</th></tr></thead>
+      <tbody id="tbl-dennerle"></tbody>
+    </table></div></div>
+    <div class="mail-box" id="mail-dennerle" style="display:none">
+      <div class="mail-header"><span class="mail-label">✉ Bestellmail</span><button class="mail-copy-btn" id="copybtn-dennerle" onclick="copyMail('dennerle')">Kopieren</button></div>
+      <div class="mail-field"><div class="mail-field-label">An</div><div class="mail-field-val"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ee819c8a8b9cae8a8b80808b9c828b9e828f809a9dc08d8183">[email&#160;protected]</a></div></div>
+      <div class="mail-field"><div class="mail-field-label">Betreff</div><div class="mail-field-val" id="subj-dennerle"></div></div>
+      <div class="mail-field"><div class="mail-field-label">Nachricht</div><div class="mail-body" id="body-dennerle"></div></div>
+    </div>
+  </div>
+
+  <div class="lief-panel" id="panel-tropica">
+    <div class="panel-header">
+      <div class="panel-stats">
+        <div class="panel-stat">Artikel: <span id="cnt-tropica">0</span></div>
+        <div class="panel-stat">Menge: <span id="qty-tropica">0</span></div>
+      </div>
+      <div class="panel-actions">
+        <button class="action-btn" onclick="exportCSV('tropica')">⬇ CSV</button>
+        <button class="action-btn" onclick="toggleMail('tropica')">✉ Mail</button>
+      </div>
+    </div>
+    <div class="table-wrap"><div class="scroll-wrap"><table>
+      <thead><tr><th>Lief-Nr</th><th>Artikel</th><th>Typ</th><th style="text-align:right">Reserv.</th><th style="text-align:right">Bestand</th><th style="text-align:right">Verkäufe</th><th style="text-align:right">Bestellmenge</th></tr></thead>
+      <tbody id="tbl-tropica"></tbody>
+    </table></div></div>
+    <div class="mail-box" id="mail-tropica" style="display:none">
+      <div class="mail-header"><span class="mail-label">✉ Bestellmail</span><button class="mail-copy-btn" id="copybtn-tropica" onclick="copyMail('tropica')">Kopieren</button></div>
+      <div class="mail-field"><div class="mail-field-label">An</div><div class="mail-field-val"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="295d5b4659404a48695d5b4659404a48074d42">[email&#160;protected]</a></div></div>
+      <div class="mail-field"><div class="mail-field-label">Betreff</div><div class="mail-field-val" id="subj-tropica"></div></div>
+      <div class="mail-field"><div class="mail-field-label">Nachricht</div><div class="mail-body" id="body-tropica"></div></div>
+    </div>
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// =============================================================
+// HELPERS
+// =============================================================
+function uid() {
+  return Math.random().toString(36).slice(2);
+}
+function esc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function toNum(v) {
+  if (v == null || v === '') return 0;
+  var n = parseFloat(String(v).replace(',', '.').replace(/[^\d.-]/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+function normNr(s) {
+  // Normalize liefNr: lowercase, trim, take first part before semicolon
+  return String(s || '').trim().toLowerCase().split(';')[0].trim();
+}
+
+// =============================================================
+// FIXARTIKEL DEFAULTS – fest im Code, kein localStorage
+// =============================================================
+var FIX_DEFAULTS = [
+  { name: 'Büschelfarn Nano',             lieferant: 'Dennerle', liefNr: '30593',    varId: '29207' },
+  { name: 'Algenfarn',                    lieferant: 'Dennerle', liefNr: '351',      varId: '29206' },
+  { name: 'Anubias Pinto halber Topf',    lieferant: 'Dennerle', liefNr: '30030',    varId: '29256' },
+  { name: 'Anubias Bonsai halber Topf',   lieferant: 'Dennerle', liefNr: '744',      varId: '29235' },
+  { name: 'Anubias gold halber Topf',     lieferant: 'Dennerle', liefNr: '785',      varId: '29255' },
+  { name: 'Hemianthus halber Topf',       lieferant: 'Dennerle', liefNr: '444',      varId: '29234' },
+  { name: 'Südamerikanischer Froschbiss', lieferant: 'Dennerle', liefNr: '30502',    varId: '29205' },
+  { name: 'Wasserlinsen',                 lieferant: 'Krause',   liefNr: 'P1025',    varId: '29204' },
+  { name: 'Schwimmende Wolfsmilch',       lieferant: 'Tropica',  liefNr: '028 TC',   varId: '29212' },
+  { name: 'Christmas Moos',               lieferant: 'Tropica',  liefNr: '003A POR', varId: '29171' },
+  { name: 'Java Moos',                    lieferant: 'Tropica',  liefNr: '003 POR',  varId: '29170' },
+  { name: 'Hornkraut',                    lieferant: 'Tropica',  liefNr: '021A POR', varId: '29211' },
+  { name: 'Spiky Moos',                   lieferant: 'Tropica',  liefNr: '003G POR', varId: '29175' },
+  { name: 'Riccia fluitans',              lieferant: 'Tropica',  liefNr: '001 TC',   varId: '29174' },
+  { name: 'Flame Moos',                   lieferant: 'Tropica',  liefNr: '003H TC',  varId: '29173' },
+  { name: 'Weeping Moos',                 lieferant: 'Tropica',  liefNr: '003B POR', varId: '29172' }
+];
+
+// Build working array with menge=0
+var fixArtikel = FIX_DEFAULTS.map(function(d) {
+  return { id: uid(), name: d.name, lieferant: d.lieferant, liefNr: d.liefNr, varId: d.varId, menge: 0 };
+});
+
+// =============================================================
+// APP STATE
+// =============================================================
+var S = { bestand: null, verkauf: null, bestandliste: null };
+var RESULTS = { krause: [], dennerle: [], tropica: [] };
+
+var LIEF_MAP = {
+  krause:   { label: 'Krause Plant', email: 'oliver_krause1@gmx.de' },
+  dennerle: { label: 'Dennerle',     email: 'order@dennerleplants.com' },
+  tropica:  { label: 'Tropica',      email: 'tropica@tropica.dk' }
+};
+
+function getLieferant(name) {
+  var s = String(name || '').toLowerCase();
+  if (/dennerle/.test(s)) return 'dennerle';
+  if (/tropica/.test(s)) return 'tropica';
+  if (/krause/.test(s) || /^portion/.test(s)) return 'krause';
+  return null;
+}
+
+// =============================================================
+// BESTAND LOOKUP
+// =============================================================
+function findRowByVarId(varId) {
+  if (!S.bestand || !varId) return null;
+  var id = String(varId).trim();
+  for (var i = 0; i < S.bestand.length; i++) {
+    if (String(S.bestand[i]['Var ID'] || '').trim() === id) return S.bestand[i];
+  }
+  return null;
+}
+
+function findRowByLiefNr(liefNr) {
+  if (!S.bestand || !liefNr) return null;
+  var nr = normNr(liefNr);
+  for (var i = 0; i < S.bestand.length; i++) {
+    var raw = normNr(S.bestand[i]['Lief Artikelnummer'] || '');
+    if (raw === nr) return S.bestand[i];
+  }
+  return null;
+}
+
+function getFixBestandData(a) {
+  var row = a.varId ? findRowByVarId(a.varId) : findRowByLiefNr(a.liefNr);
+  if (!row) return { bst: null, res: 0 };
+  return {
+    bst: Math.max(0, toNum(row['Bestand'])),
+    res: toNum(row['Reservierung NH Lager'])
+  };
+}
+
+// =============================================================
+// RENDER FIXARTIKEL TABLE
+// =============================================================
+function renderFix() {
+  var tbody = document.getElementById('fix-body');
+  var html = '';
+  for (var i = 0; i < fixArtikel.length; i++) {
+    var a = fixArtikel[i];
+    var d = getFixBestandData(a);
+    var bst = d.bst;
+    var res = d.res;
+    var eb = a.menge || 0;
+    var tot = (res || 0) + eb;
+
+    var bstHtml;
+    if (bst === null) {
+      bstHtml = '<span class="bst-badge none">—</span>';
+    } else if (bst === 0) {
+      bstHtml = '<span class="bst-badge low">0</span>';
+    } else {
+      bstHtml = '<span class="bst-badge ok">' + bst + '</span>';
+    }
+
+    var resHtml = res > 0
+      ? '<span class="res-badge has">' + res + '</span>'
+      : '<span class="res-badge none">—</span>';
+
+    html += '<tr>';
+    html += '<td><input class="iln" value="' + esc(a.name) + '" style="min-width:160px" oninput="fixArtikel[' + i + '].name=this.value"></td>';
+    html += '<td><input class="iln" value="' + esc(a.lieferant) + '" style="min-width:75px" oninput="fixArtikel[' + i + '].lieferant=this.value"></td>';
+    html += '<td><input class="iln iln-mono" value="' + esc(a.liefNr) + '" style="min-width:85px" oninput="fixArtikel[' + i + '].liefNr=this.value;renderFix()"></td>';
+    html += '<td><input class="iln iln-mono" value="' + esc(a.varId) + '" style="min-width:70px" placeholder="—" oninput="fixArtikel[' + i + '].varId=this.value;renderFix()"></td>';
+    html += '<td style="text-align:center">' + bstHtml + '</td>';
+    html += '<td style="text-align:center">' + resHtml + '</td>';
+    html += '<td style="text-align:right"><input class="num-in" type="number" min="0" value="' + eb + '" oninput="onFixMengeChange(' + i + ',' + res + ',this.value)"></td>';
+    html += '<td style="text-align:right"><span id="ftot' + i + '" style="font-family:var(--mono);font-weight:600;color:var(--purple)">' + tot + '</span></td>';
+    html += '<td><button class="del-btn" onclick="fixArtikel.splice(' + i + ',1);renderFix()">✕</button></td>';
+    html += '</tr>';
+  }
+  tbody.innerHTML = html;
+}
+
+function onFixMengeChange(i, res, val) {
+  var eb = Math.max(0, parseInt(val) || 0);
+  fixArtikel[i].menge = eb;
+  var tot = (res || 0) + eb;
+  var el = document.getElementById('ftot' + i);
+  if (el) el.textContent = tot;
+}
+
+function addFixRow() {
+  fixArtikel.push({ id: uid(), name: '', lieferant: '', liefNr: '', varId: '', menge: 0 });
+  renderFix();
+  setTimeout(function() {
+    var ins = document.querySelectorAll('#fix-body .iln');
+    if (ins.length) ins[ins.length - 4].focus();
+  }, 30);
+}
+
+// =============================================================
+// CSV PARSER
+// =============================================================
+function parseCSV(text) {
+  var lines = text.trim().split('\n');
+  if (!lines.length) return [];
+  var fl = lines[0];
+  var sep = fl.indexOf('\t') >= 0 ? '\t' : fl.indexOf(';') >= 0 ? ';' : ',';
+  var headers = splitLine(fl, sep).map(function(h) { return h.trim().replace(/^"|"$/g, ''); });
+  var rows = [];
+  for (var i = 1; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    var vals = splitLine(line, sep);
+    var obj = {};
+    for (var j = 0; j < headers.length; j++) {
+      obj[headers[j]] = (vals[j] || '').trim().replace(/^"|"$/g, '');
+    }
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function splitLine(line, sep) {
+  var result = [], cur = '', inQ = false;
+  for (var i = 0; i < line.length; i++) {
+    var ch = line[i];
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === sep && !inQ) { result.push(cur); cur = ''; }
+    else { cur += ch; }
+  }
+  result.push(cur);
+  return result;
+}
+
+// =============================================================
+// FILE LOADERS
+// =============================================================
+function loadBestandCSV(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var fr = new FileReader();
+  fr.onload = function(e) {
+    S.bestand = parseCSV(e.target.result);
+    document.getElementById('status-bestand').textContent = '✓ ' + S.bestand.length + ' Zeilen';
+    document.getElementById('card-bestand').classList.add('loaded');
+    renderFix();
+    checkReady();
+  };
+  fr.readAsText(file, 'UTF-8');
+}
+
+function loadVerkaufCSV(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var fr = new FileReader();
+  fr.onload = function(e) {
+    S.verkauf = parseCSV(e.target.result);
+    document.getElementById('status-verkauf').textContent = '✓ ' + S.verkauf.length + ' Zeilen';
+    document.getElementById('card-verkauf').classList.add('loaded');
+    checkReady();
+  };
+  fr.readAsText(file, 'UTF-8');
+}
+
+function loadBestandListe(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var ext = file.name.split('.').pop().toLowerCase();
+  function done(rows) {
+    var ids = new Set();
+    rows.forEach(function(r) {
+      var id = String(r['Var ID'] || r['Var-ID'] || Object.values(r)[0] || '').trim();
+      if (id) ids.add(id);
+    });
+    S.bestandliste = ids;
+    document.getElementById('status-bestandliste').textContent = '✓ ' + ids.size + ' Artikel';
+    document.getElementById('card-bestandliste').classList.add('loaded');
+    checkReady();
+  }
+  if (ext === 'csv') {
+    var fr = new FileReader();
+    fr.onload = function(e) { done(parseCSV(e.target.result)); };
+    fr.readAsText(file, 'UTF-8');
+  } else {
+    loadXLSX().then(function() {
+      var fr = new FileReader();
+      fr.onload = function(e) {
+        try {
+          var wb = XLSX.read(e.target.result, { type: 'array' });
+          done(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' }));
+        } catch(err) { alert('Fehler: ' + err.message); }
+      };
+      fr.readAsArrayBuffer(file);
+    });
+  }
+}
+
+function loadXLSX() {
+  return new Promise(function(res, rej) {
+    if (window.XLSX) { res(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+function checkReady() {
+  document.getElementById('run-btn').disabled = !(S.bestand && S.verkauf && S.bestandliste);
+}
+
+// =============================================================
+// CALCULATE
+// =============================================================
+function calculate() {
+  // Build Verkauf map
+  var vm = {};
+  for (var i = 0; i < S.verkauf.length; i++) {
+    var r = S.verkauf[i];
+    var id = String(r['Var-ID'] || r['Var ID'] || '').trim();
+    if (id) vm[id] = (vm[id] || 0) + toNum(r['Menge']);
+  }
+
+  RESULTS.krause = [];
+  RESULTS.dennerle = [];
+  RESULTS.tropica = [];
+
+  // Process Plenty articles
+  for (var i = 0; i < S.bestand.length; i++) {
+    var r = S.bestand[i];
+    var id = String(r['Var ID'] || r['Var-ID'] || '').trim();
+    if (!id) continue;
+    var lief = getLieferant(r['Lief Name'] || '');
+    if (!lief) continue;
+    var artName = String(r['Artikelbeschreibung'] || r['Artikelname'] || '').trim();
+    if (/^bundle (portion|produkt)/i.test(artName)) continue;
+    var res = toNum(r['Reservierung NH Lager']);
+    var bst = Math.max(0, toNum(r['Bestand']));
+    var vk = vm[id] || 0;
+    var isB = S.bestandliste.has(id);
+    var qty = isB
+      ? Math.max(0, Math.ceil(vk - (bst - res)))
+      : Math.max(0, Math.ceil(res - bst));
+    if (qty <= 0) continue;
+    var liefNr = String(r['Lief Artikelnummer'] || '').trim();
+    RESULTS[lief].push({ liefNr: liefNr, name: artName, typ: isB ? 'bestand' : 'normal', res: res, bst: bst, vk: vk, qty: qty });
+  }
+
+  // Process Fixartikel – add eigenbedarf to matched main article
+  for (var i = 0; i < fixArtikel.length; i++) {
+    var a = fixArtikel[i];
+    var eb = a.menge || 0;
+    if (eb <= 0) continue;
+    var lief = getLieferant(a.lieferant);
+    if (!lief) continue;
+    var nr = normNr(a.liefNr);
+    // Find matching article in results
+    var matched = null;
+    for (var j = 0; j < RESULTS[lief].length; j++) {
+      if (normNr(RESULTS[lief][j].liefNr) === nr) { matched = RESULTS[lief][j]; break; }
+    }
+    if (matched) {
+      matched.qty += eb;
+    } else {
+      // Article not yet in list – add it with name from export
+      var row = findRowByLiefNr(a.liefNr);
+      var name = row ? String(row['Artikelbeschreibung'] || row['Artikelname'] || a.name).trim() : a.name;
+      var res2 = row ? toNum(row['Reservierung NH Lager']) : 0;
+      var bst2 = row ? Math.max(0, toNum(row['Bestand'])) : 0;
+      RESULTS[lief].push({ liefNr: a.liefNr, name: name, typ: 'normal', res: res2, bst: bst2, vk: null, qty: eb });
+    }
+  }
+
+  // Update stats
+  var tot = RESULTS.krause.length + RESULTS.dennerle.length + RESULTS.tropica.length;
+  document.getElementById('st-total').textContent = tot;
+  document.getElementById('st-krause').textContent = RESULTS.krause.length;
+  document.getElementById('st-dennerle').textContent = RESULTS.dennerle.length;
+  document.getElementById('st-tropica').textContent = RESULTS.tropica.length;
+
+  var liefs = ['krause', 'dennerle', 'tropica'];
+  for (var k = 0; k < liefs.length; k++) {
+    var lf = liefs[k];
+    document.getElementById('cnt-' + lf).textContent = RESULTS[lf].length;
+    document.getElementById('qty-' + lf).textContent = RESULTS[lf].reduce(function(s, r) { return s + r.qty; }, 0);
+    renderTable(lf);
+    buildMail(lf);
+  }
+  document.getElementById('results').style.display = 'block';
+}
+
+// =============================================================
+// RENDER TABLE
+// =============================================================
+function renderTable(lief) {
+  var rows = RESULTS[lief];
+  var tbody = document.getElementById('tbl-' + lief);
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">Keine Bestellung für ' + LIEF_MAP[lief].label + '</div></td></tr>';
+    return;
+  }
+  var tl = { normal: 'Normal', bestand: 'Bestand' };
+  var html = '';
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    html += '<tr>';
+    html += '<td class="lnc">' + esc(r.liefNr) + '</td>';
+    html += '<td><div class="art-name" title="' + esc(r.name) + '">' + esc(r.name) + '</div></td>';
+    html += '<td><span class="tag tag-' + r.typ + '">' + (tl[r.typ] || r.typ) + '</span></td>';
+    html += '<td class="num ' + (r.res > 0 ? 'warn-v' : 'muted-v') + '">' + (r.res > 0 ? r.res : '—') + '</td>';
+    html += '<td class="num">' + (r.bst != null ? r.bst : '<span class="muted-v">—</span>') + '</td>';
+    html += '<td class="num">' + (r.vk != null && r.vk > 0 ? r.vk : '<span class="muted-v">—</span>') + '</td>';
+    html += '<td style="text-align:right"><input class="qty-in" type="number" min="0" value="' + r.qty + '" title="Bestellmenge überschreiben" oninput="RESULTS[\'' + lief + '\'][' + i + '].qty=Math.max(0,+this.value||0);updateStats(\'' + lief + '\');buildMail(\'' + lief + '\')"></td>';
+    html += '</tr>';
+  }
+  tbody.innerHTML = html;
+}
+
+function updateStats(lief) {
+  document.getElementById('cnt-' + lief).textContent = RESULTS[lief].length;
+  document.getElementById('qty-' + lief).textContent = RESULTS[lief].reduce(function(s, r) { return s + r.qty; }, 0);
+}
+
+// =============================================================
+// MAIL
+// =============================================================
+function buildMail(lief) {
+  var rows = RESULTS[lief];
+  if (!rows.length) return;
+  var date = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  var subj = 'Pflanzenbestellung ' + date + ' - NatureHolic GmbH';
+  var body = 'Guten Tag,\n\nanbei finden Sie unsere aktuelle Bestellung vom ' + date + '. Bitte bestätigen Sie den Eingang.\n\nMit freundlichen Grüßen,\nNatureHolic GmbH';
+  document.getElementById('subj-' + lief).textContent = subj;
+  document.getElementById('body-' + lief).textContent = body;
+}
+
+function toggleMail(lief) {
+  var b = document.getElementById('mail-' + lief);
+  b.style.display = b.style.display === 'none' ? 'block' : 'none';
+}
+
+function copyMail(lief) {
+  var subj = document.getElementById('subj-' + lief).textContent;
+  var body = document.getElementById('body-' + lief).textContent;
+  navigator.clipboard.writeText('Betreff: ' + subj + '\n\n' + body).then(function() {
+    var btn = document.getElementById('copybtn-' + lief);
+    btn.textContent = '✓ Kopiert';
+    btn.classList.add('copied');
+    setTimeout(function() { btn.textContent = 'Kopieren'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function switchTab(lief, btn) {
+  document.querySelectorAll('.lief-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.lief-panel').forEach(function(p) { p.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('panel-' + lief).classList.add('active');
+}
+
+function exportCSV(lief) {
+  var rows = RESULTS[lief];
+  if (!rows.length) return;
+  var lines = ['Lief-Artikelnummer;Artikelname;Bestellmenge'];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    lines.push(r.liefNr + ';"' + r.name.replace(/"/g, '""') + '";' + r.qty);
+  }
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' }));
+  a.download = 'Bestellung_' + LIEF_MAP[lief].label.replace(/\s/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+}
+
+// =============================================================
+// INIT
+// =============================================================
+renderFix();
+</script>
+</body>
+</html>
